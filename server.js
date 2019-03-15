@@ -4,6 +4,19 @@ const bcrypt = require('bcrypt-nodejs');
 const cors = require('cors'); // when we need to communicate with outside word using HTTP then Chrome for security reason are blocking the connection. And that's called 'Access Control Allow Origin'. So to connect localhost we need to do something called CORS(the error message is "set the request's mode to no-cors")
 // The same-origin policy is an important concept in the web application security model. Under the policy, a web browser permits scripts contained in a first web page to access data in a second web page, but only if both web pages have the same origin. An origin is defined as a combination of URI scheme, host name, and port number. This policy prevents a malicious script on one page from obtaining access to sensitive data on another web page through that page's Document Object Model...  (https://en.wikipedia.org/wiki/Same-origin_policy)
 //https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+const knex = require('knex');
+
+const postgres = knex({
+  client: 'pg',
+  connection: {
+    host : '127.0.0.1', //127.0.0.1 = localhost
+    user : 'marta',
+    password : '',
+    database : 'smart-brain'
+  }
+});
+
+console.log(postgres.select('*').from('users')); 
 
 
 const app = express();
