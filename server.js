@@ -6,17 +6,19 @@ const cors = require('cors'); // when we need to communicate with outside word u
 //https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 const knex = require('knex');
 
-const postgres = knex({
+const db = knex({
   client: 'pg',
   connection: {
     host : '127.0.0.1', //127.0.0.1 = localhost
     user : 'marta',
-    password : '',
+    password : 'test',
     database : 'smart-brain'
   }
 });
 
-console.log(postgres.select('*').from('users')); 
+db.select('*').from('users').then(data => {
+  console.log(data)
+});
 
 
 const app = express();
@@ -79,14 +81,18 @@ app.post('/register', (req, res) => {
   //  // Store hash in your password DB.
   //   console.log(hash);
   // });
-  database.users.push({
-      id: '125',
-      name: name,
+  db('users')
+    .returning('*')
+    .insert({
       email: email,
-      entries: 0,
+      name: name,
       joined: new Date()
-  })
-  res.json(database.users[database.users.length-1]);
+    })
+    .then(user => {
+      res.json(user[0]);
+    })
+    .catch(err => res.status(400).json('unable to register'))
+  
 })
 
 
