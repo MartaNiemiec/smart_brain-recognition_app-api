@@ -17,7 +17,7 @@ const db = knex({
 });
 
 db.select('*').from('users').then(data => {
-  console.log(data)
+  // console.log(data)
 });
 
 
@@ -26,27 +26,6 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
-const database = {
-  users: [
-    {
-      id: '123',
-      name: 'John',
-      email: 'john@gmail.com',
-      password: 'cookies',
-      entries: 0,
-      joined: new Date()
-    },
-    {
-      id: '124',
-      name: 'Sally',
-      email: 'sally@gmail.com',
-      password: 'bananas',
-      entries: 0,
-      joined: new Date()
-    }
-  ]
-}
-
 
 app.get('/', (req, res) => {
   res.send(database.users);
@@ -54,45 +33,52 @@ app.get('/', (req, res) => {
 
 
 app.post('/signin', (req, res) => {
-  // Load hash from your password DB.
-  bcrypt.compare("apples", '$2a$10$Zm46r4vz7R2HYW7/4pVDeeNAi8FScQOvHoF1Bqrd1tW/zpwEghKVm', function(err, res) {
-    // res == true
-    console.log('first quess', res);
-  });
-  bcrypt.compare("veggies", '$2a$10$Zm46r4vz7R2HYW7/4pVDeeNAi8FScQOvHoF1Bqrd1tW/zpwEghKVm', function(err, res) {
-    // res == false
-    console.log('second quess', res);
-  });
-  if (req.body.email === database.users[0].email && 
-      req.body.password === database.users[0].password) {
-    // res.json('success')
-    res.json(database.users[0]);
-  } else {
-    res.status(400).json('error loggin in')
-  }
-  // res.send('signing')
-  res.json('signing')
+  db.select('email', 'hash').from('login')
+  .where('email', '=', req.body.email)
+  .then(data => {
+    const isValid = bcrypt.compareSync(req.body.password, data[0].hash); // comparing imputed password with the hash //return true or false
+    if (isValid) {
+      return db.select('*').from('users')
+      .where('email', '=', req.body.email)
+      .then(user => {
+        res.json(user[0])  //user is an object so it has to be added [0] 
+      })
+      .catch(err => res.status(400).json('unable to get user'))
+    } else {
+    res.status(400).json('wrong credentials')
+    }
+  })
+  .catch(err => res.status(400).json('wrong credentials'))
 })
 
 
 app.post('/register', (req, res) => {
   const { email, name, password } = req.body;
-  // bcrypt.hash(password, null, null, function(err, hash) {
-  //  // Store hash in your password DB.
-  //   console.log(hash);
-  // });
-  db('users')
-    .returning('*')
-    .insert({
-      email: email,
-      name: name,
-      joined: new Date()
+  const hash = bcrypt.hashSync(password);
+  db.transaction(trx => {   // transaction to do more than two things at once // then has to use "trx" insted of "db"
+    trx.insert({
+      hash: hash,
+      email: email
     })
-    .then(user => {
-      res.json(user[0]);
+    .into('login')  // insetring hash and email into login table
+    .returning('email') // returning email
+    .then(loginEmail => { // now we are using email as loginEmail
+      console.log("typeof loginEmail  ", typeof loginEmail[0]);
+      return trx('users') // returning another trx transaction
+        .returning('*')
+        .insert({   // and interint to the users table
+          email: loginEmail[0], // loginEmail is an object so we have to add [0] to change it into a string
+          name: name,
+          joined: new Date()
+        })
+        .then(user => {     // response with json
+          res.json(user[0]);  
+        })
     })
+    .then(trx.commit) // to add everything we have to commit
+    .catch(trx.rollback)  // if anything fals it rollback the changes
+  })
     .catch(err => res.status(400).json('unable to register'))
-  
 })
 
 
