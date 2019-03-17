@@ -32,6 +32,7 @@ app.post('/signin', signin.handleSignin(db, bcrypt))  // first is running handle
 app.post('/register', (req, res) => { register.handleRegister(req, res, db, bcrypt) })  // register.handleRegister(req, res, db, bcrypt) -> this is dependency injection we're injecting whatever dependencies this handle register function needs. Its like: signin.handleSignin(db, bcrypt)(req,res)
 app.get('/profile/:id', (req, res) => { profile.handleProfileGet(req, res, db) })
 app.put('/image', (req, res) => { image.handleImage(req, res, db) })
+app.post('/imageurl', (req, res) => { image.handleApiCall(req, res) })
 
 app.listen(3000, () => {
   console.log('app is runnng on port 3000');
