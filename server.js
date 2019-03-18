@@ -15,10 +15,8 @@ const db = knex({
   client: 'pg',
   connection: {
     // host : '127.0.0.1', //127.0.0.1 = localhost
-    host: 'postgresql-infinite-57163',
-    user : 'marta',
-    password : '',
-    database : 'smart-brain'
+    host: process.env.DATABASE_URL,
+    ssl: true,
   }
 });
 
